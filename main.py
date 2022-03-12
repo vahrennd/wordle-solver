@@ -25,8 +25,7 @@ def result_valid(result):
     if len(result) != 5:
         return False
 
-    valid = set('xgy')
-    if set(result).issubset(valid):
+    if set(result).issubset(set('xgy')):
         return True
 
     return False
@@ -70,11 +69,9 @@ def filter_words(words, guess, result):
     for i in range(5):
         if result[i] == "x":
             no_match(words, guess[i], guess, result, i)
-
-        if result[i] == "y":
+        elif result[i] == "y":
             partial_match(words, guess[i], i)
-
-        if result[i] == "g":
+        elif result[i] == "g":
             full_match(words, guess[i], i)
 
 
