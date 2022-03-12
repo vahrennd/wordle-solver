@@ -79,8 +79,17 @@ def filter_words(words, guess, result):
 
 
 def print_guess(words):
-    for i in range(min(len(words), 5)):
-        print(words[i].strip())
+    i = -1
+    command = ""
+    while command != "y":
+        for i in range(i + 1, i + 6):
+            if i > len(words) - 1:
+                print("that's all!")
+                return
+
+            print(words[i].strip())
+
+        command = input("Ready to guess (y/n)? ")
 
 
 def solve():
@@ -97,7 +106,7 @@ def solve():
 
         print_guess(words)
 
-    print("that's pretty neat!")
+    print("That's pretty neat!")
 
 
 if __name__ == '__main__':
