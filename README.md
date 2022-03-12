@@ -1,1 +1,3 @@
 # wordle-solver
+
+Inefficient and impractical, but effective! Sorta...
