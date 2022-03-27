@@ -33,7 +33,7 @@ def no_match(words, letters, letter, guess, result, i):
     for word in words.copy():
         duplicate = False
         for j in range(5):
-            if i != j and result[j] == "g" and guess[j] == letter:
+            if i != j and guess[j] == letter and result[j] != "x":
                 duplicate = True
 
         if not duplicate and letter in word:
