@@ -1,5 +1,13 @@
 import random
 import string
+import time
+
+from selenium import webdriver
+from bs4 import BeautifulSoup
+from selenium.common import NoSuchElementException
+from selenium.webdriver import ActionChains, Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 
 
 def prompt_guess():
@@ -136,5 +144,61 @@ def solve():
     print("That's pretty neat!")
 
 
+def get_next_guess(words, letters, last_guess, last_result):
+    if len(last_result) > 0:
+        filter_words(words, letters, last_guess, last_result)
+
+    next_guesses = find_effective_words(words, letters)
+
+    return next_guesses[0]
+
+
+def auto_solve():
+    browser = webdriver.Firefox()
+
+    browser.get("https://www.nytimes.com/games/wordle/index.html")
+    time.sleep(2)
+
+    try:
+        browser.find_element(By.CLASS_NAME, "Modal-module_closeIcon__b4z74").click()
+    except NoSuchElementException:
+        print("No modal found")
+
+    f = open("words.txt")
+    words = f.readlines()
+    f.close()
+
+    letters = {}
+    for letter in list(string.ascii_lowercase):
+        letters[letter] = 0
+
+    last_guess = ""
+    last_result = ""
+
+    board = browser.find_element(By.CLASS_NAME, "Board-module_board__lbzlf")
+    for i in range(1, 7):
+        next_guess = get_next_guess(words, letters, last_guess, last_result)
+        last_result = ""
+        ActionChains(browser).send_keys(next_guess).send_keys(Keys.ENTER).perform()
+        last_guess = next_guess
+        time.sleep(5)
+        row = board.find_element(By.CSS_SELECTOR, "[aria-label='Row {}']".format(i))
+        tiles = row.find_elements(By.CSS_SELECTOR, "[aria-roledescription='tile")
+        for j in range(0, 5):
+            data_state = tiles[j].get_attribute("data-state")
+            if data_state == "correct":
+                last_result += "g"
+            elif data_state == "present":
+                last_result += "y"
+            else:
+                last_result += "x"
+        if last_result == "ggggg":
+            print("The word was {}, guessed in {} tries".format(last_guess.rstrip('\n').upper(), i))
+            break
+
+    time.sleep(30)
+    browser.close()
+
+
 if __name__ == '__main__':
-    solve()
+    auto_solve()
