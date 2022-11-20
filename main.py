@@ -1,13 +1,13 @@
+import os
 import random
 import string
 import time
 
 from selenium import webdriver
-from bs4 import BeautifulSoup
+from pyvirtualdisplay import Display
 from selenium.common import NoSuchElementException
 from selenium.webdriver import ActionChains, Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
 
 
 def prompt_guess():
@@ -154,6 +154,11 @@ def get_next_guess(words, letters, last_guess, last_result):
 
 
 def auto_solve():
+    display = ""
+    if os.environ.get('LOCAL_RUN') != "1":
+        display = Display()
+        display.start()
+
     browser = webdriver.Firefox()
 
     browser.get("https://www.nytimes.com/games/wordle/index.html")
@@ -179,6 +184,7 @@ def auto_solve():
     for i in range(1, 7):
         next_guess = get_next_guess(words, letters, last_guess, last_result)
         last_result = ""
+        print("Guessing {}".format(next_guess.rstrip('\n').upper()))
         ActionChains(browser).send_keys(next_guess).send_keys(Keys.ENTER).perform()
         last_guess = next_guess
         time.sleep(5)
@@ -196,8 +202,10 @@ def auto_solve():
             print("The word was {}, guessed in {} tries".format(last_guess.rstrip('\n').upper(), i))
             break
 
-    time.sleep(30)
+    time.sleep(5)
     browser.close()
+    if os.environ.get('LOCAL_RUN') != "1":
+        display.stop()
 
 
 if __name__ == '__main__':
