@@ -2,10 +2,11 @@ import os
 import string
 import time
 from enum import Enum
-import pyperclip
 
-from selenium import webdriver
+import pyperclip
+import tweepy
 from pyvirtualdisplay import Display
+from selenium import webdriver
 from selenium.common import NoSuchElementException
 from selenium.webdriver import ActionChains, Keys
 from selenium.webdriver.common.by import By
@@ -87,6 +88,52 @@ def get_next_guess(words, letters, last_guess, last_result):
     return next_guesses[0]
 
 
+def solve(browser):
+    board = browser.find_element(By.CSS_SELECTOR, "[class*=Board-module_board__]")
+
+    f = open("words.txt")
+    words = f.readlines()
+    f.close()
+
+    letters = {}
+    for letter in list(string.ascii_lowercase):
+        letters[letter] = 0
+
+    guess = get_next_guess(words, letters, "", [])
+    for i in range(1, 7):
+        result = []
+        print("Guessing {}".format(guess.rstrip('\n').upper()))
+        ActionChains(browser).send_keys(guess).send_keys(Keys.ENTER).perform()
+        time.sleep(5)
+        row = board.find_element(By.CSS_SELECTOR, "[aria-label='Row {}']".format(i))
+        tiles = row.find_elements(By.CSS_SELECTOR, "[aria-roledescription='tile")
+        for j in range(0, 5):
+            data_state = tiles[j].get_attribute("data-state")
+            if data_state == State.CORRECT.value:
+                result.append(State.CORRECT)
+            elif data_state == State.PRESENT.value:
+                result.append(State.PRESENT)
+            else:
+                result.append(State.ABSENT)
+        if State.ABSENT not in result and State.PRESENT not in result:
+            print("The word was {}, guessed in {} tries".format(guess.rstrip('\n').upper(), i))
+            return
+        else:
+            guess = get_next_guess(words, letters, guess, result)
+
+
+def post_result_twitter(result):
+    f = open(".twitter_creds")
+    creds = f.readlines()
+    f.close()
+
+    auth = tweepy.OAuthHandler(creds[0].rstrip('\n'), creds[1].rstrip('\n'))
+    auth.set_access_token(creds[2].rstrip('\n'), creds[3].rstrip('\n'))
+
+    api = tweepy.API(auth)
+    api.update_status(result)
+
+
 def auto_solve():
     display = ""
     if os.environ.get('LOCAL_RUN') != "1":
@@ -98,17 +145,6 @@ def auto_solve():
 
     browser.get("https://www.nytimes.com/games/wordle/index.html")
 
-    f = open("words.txt")
-    words = f.readlines()
-    f.close()
-
-    letters = {}
-    for letter in list(string.ascii_lowercase):
-        letters[letter] = 0
-
-    last_guess = ""
-    last_result = []
-
     time.sleep(2)
 
     try:
@@ -116,27 +152,7 @@ def auto_solve():
     except NoSuchElementException:
         print("No modal found")
 
-    board = browser.find_element(By.CSS_SELECTOR, "[class*=Board-module_board__]")
-    for i in range(1, 7):
-        next_guess = get_next_guess(words, letters, last_guess, last_result)
-        last_result = []
-        print("Guessing {}".format(next_guess.rstrip('\n').upper()))
-        ActionChains(browser).send_keys(next_guess).send_keys(Keys.ENTER).perform()
-        last_guess = next_guess
-        time.sleep(5)
-        row = board.find_element(By.CSS_SELECTOR, "[aria-label='Row {}']".format(i))
-        tiles = row.find_elements(By.CSS_SELECTOR, "[aria-roledescription='tile")
-        for j in range(0, 5):
-            data_state = tiles[j].get_attribute("data-state")
-            if data_state == State.CORRECT.value:
-                last_result.append(State.CORRECT)
-            elif data_state == State.PRESENT.value:
-                last_result.append(State.PRESENT)
-            else:
-                last_result.append(State.ABSENT)
-        if State.ABSENT not in last_result and State.PRESENT not in last_result:
-            print("The word was {}, guessed in {} tries".format(last_guess.rstrip('\n').upper(), i))
-            break
+    solve(browser)
 
     time.sleep(5)
     browser.find_element(By.ID, "share-button").click()
@@ -146,6 +162,7 @@ def auto_solve():
     browser.close()
     if os.environ.get('LOCAL_RUN') != "1":
         display.stop()
+        post_result_twitter(result)
 
 
 if __name__ == '__main__':
