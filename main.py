@@ -1,4 +1,5 @@
 import os
+import random
 import string
 import time
 from enum import Enum
@@ -16,6 +17,21 @@ class State(Enum):
     CORRECT = "correct"
     PRESENT = "present"
     ABSENT = "absent"
+
+
+def init():
+    f = open("words.txt")
+    words = f.readlines()
+    f.close()
+
+    for i in range(len(words)):
+        words[i] = words[i].rstrip("\n").upper()
+
+    letters = {}
+    for letter in list(string.ascii_uppercase):
+        letters[letter] = 0
+
+    return words, letters
 
 
 def no_match(words, letters, letter, guess, result, i):
@@ -56,12 +72,13 @@ def filter_words(words, letters, guess, result):
 
 
 def find_effective_words(words, letters):
+    letter_weights = letters.copy()
     for word in words:
         for i in range(5):
-            if letters[word[i]] >= 0:
-                letters[word[i]] = letters[word[i]] + 1
+            if letter_weights[word[i]] >= 0:
+                letter_weights[word[i]] = letter_weights[word[i]] + 1
 
-    most_common = max(letters, key=letters.get)
+    most_common = max(letter_weights, key=letter_weights.get)
 
     filtered_words = []
 
@@ -69,12 +86,9 @@ def find_effective_words(words, letters):
         if most_common in word:
             filtered_words.append(word)
 
-    if len(filtered_words) > 5:
-        new_letters = letters.copy()
-        new_letters[most_common] = -1
-        return find_effective_words(filtered_words, new_letters)
-    elif len(filtered_words) > 0:
-        return filtered_words
+    if len(filtered_words) > 0:
+        letters[most_common] = -1
+        return find_effective_words(filtered_words, letters)
     else:
         return words
 
@@ -83,31 +97,26 @@ def get_next_guess(words, letters, last_guess, last_result):
     if len(last_result) > 0:
         filter_words(words, letters, last_guess, last_result)
 
-    next_guesses = find_effective_words(words, letters)
+    next_guesses = find_effective_words(words, letters.copy())
 
-    return next_guesses[0]
+    print("Candidate guesses: {}".format(next_guesses))
+    return random.choice(next_guesses)
 
 
 def solve(browser):
     board = browser.find_element(By.CSS_SELECTOR, "[class*=Board-module_board__]")
 
-    f = open("words.txt")
-    words = f.readlines()
-    f.close()
-
-    letters = {}
-    for letter in list(string.ascii_lowercase):
-        letters[letter] = 0
+    words, letters = init()
 
     guess = get_next_guess(words, letters, "", [])
     for i in range(1, 7):
         result = []
-        print("Guessing {}".format(guess.rstrip('\n').upper()))
+        print("Guessing {}".format(guess))
         ActionChains(browser).send_keys(guess).send_keys(Keys.ENTER).perform()
         time.sleep(5)
         row = board.find_element(By.CSS_SELECTOR, "[aria-label='Row {}']".format(i))
         tiles = row.find_elements(By.CSS_SELECTOR, "[aria-roledescription='tile")
-        for j in range(0, 5):
+        for j in range(5):
             data_state = tiles[j].get_attribute("data-state")
             if data_state == State.CORRECT.value:
                 result.append(State.CORRECT)
@@ -116,7 +125,7 @@ def solve(browser):
             else:
                 result.append(State.ABSENT)
         if State.ABSENT not in result and State.PRESENT not in result:
-            print("The word was {}, guessed in {} tries".format(guess.rstrip('\n').upper(), i))
+            print("The word was {}, guessed in {} tries".format(guess, i))
             return
         else:
             guess = get_next_guess(words, letters, guess, result)
@@ -148,7 +157,8 @@ def auto_solve():
     time.sleep(2)
 
     try:
-        browser.find_element(By.CLASS_NAME, "Modal-module_closeIcon__b4z74").click()
+        # try to dismiss the "How to Play" modal
+        browser.find_element(By.CSS_SELECTOR, "[aria-label='Close']").click()
     except NoSuchElementException:
         print("No modal found")
 
