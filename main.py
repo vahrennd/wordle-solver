@@ -19,6 +19,21 @@ class State(Enum):
     ABSENT = "absent"
 
 
+def init():
+    f = open("words.txt")
+    words = f.readlines()
+    f.close()
+
+    for i in range(len(words)):
+        words[i] = words[i].rstrip("\n").upper()
+
+    letters = {}
+    for letter in list(string.ascii_uppercase):
+        letters[letter] = 0
+
+    return words, letters
+
+
 def no_match(words, letters, letter, guess, result, i):
     letters[letter] = -1
     for word in words.copy():
@@ -91,16 +106,7 @@ def get_next_guess(words, letters, last_guess, last_result):
 def solve(browser):
     board = browser.find_element(By.CSS_SELECTOR, "[class*=Board-module_board__]")
 
-    f = open("words.txt")
-    words = f.readlines()
-    f.close()
-
-    for i in range(len(words)):
-        words[i] = words[i].rstrip("\n").upper()
-
-    letters = {}
-    for letter in list(string.ascii_uppercase):
-        letters[letter] = 0
+    words, letters = init()
 
     guess = get_next_guess(words, letters, "", [])
     for i in range(1, 7):

@@ -1,6 +1,6 @@
 import string
 
-from main import get_next_guess, State
+from main import get_next_guess, State, init
 
 
 def get_result(word, guess):
@@ -22,16 +22,7 @@ def get_result(word, guess):
 
 
 if __name__ == '__main__':
-    f = open("words.txt")
-    words = f.readlines()
-    f.close()
-
-    for i in range(len(words)):
-        words[i] = words[i].rstrip("\n").upper()
-
-    letters = {}
-    for letter in list(string.ascii_uppercase):
-        letters[letter] = 0
+    words, letters = init()
 
     total_guesses = 0
     successful_solves = 0
