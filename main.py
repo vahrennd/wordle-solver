@@ -165,7 +165,7 @@ def auto_solve():
     solve(browser)
 
     time.sleep(5)
-    browser.find_element(By.ID, "share-button").click()
+    browser.find_element(By.XPATH, '//span[text()="Share"]').click()
     result = pyperclip.paste()
     print(result)
 
