@@ -156,6 +156,10 @@ def auto_solve():
 
     time.sleep(2)
 
+    browser.find_element(By.CSS_SELECTOR, "[data-testid='Play']").click()
+
+    time.sleep(1)
+
     try:
         # try to dismiss the "How to Play" modal
         browser.find_element(By.CSS_SELECTOR, "[aria-label='Close']").click()
@@ -164,7 +168,7 @@ def auto_solve():
 
     solve(browser)
 
-    time.sleep(5)
+    time.sleep(3)
     browser.find_element(By.XPATH, '//span[text()="Share"]').click()
     result = pyperclip.paste()
     print(result)
