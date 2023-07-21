@@ -136,11 +136,14 @@ def post_result_twitter(result):
     creds = f.readlines()
     f.close()
 
-    auth = tweepy.OAuthHandler(creds[0].rstrip('\n'), creds[1].rstrip('\n'))
-    auth.set_access_token(creds[2].rstrip('\n'), creds[3].rstrip('\n'))
+    client = tweepy.Client(
+        consumer_key=creds[0].rstrip('\n'),
+        consumer_secret=creds[1].rstrip('\n'),
+        access_token=creds[2].rstrip('\n'),
+        access_token_secret=creds[3].rstrip('\n')
+    )
 
-    api = tweepy.API(auth)
-    api.update_status(result)
+    client.create_tweet(text=result)
 
 
 def auto_solve():
