@@ -159,6 +159,13 @@ def auto_solve():
 
     time.sleep(2)
 
+    try:
+        # try to dismiss the "Terms and Conditions" modal
+        browser.find_element(By.CSS_SELECTOR, "[class='purr-blocker-card__button']").click()
+        time.sleep(1)
+    except NoSuchElementException:
+        print("No modal found")
+
     browser.find_element(By.CSS_SELECTOR, "[data-testid='Play']").click()
 
     time.sleep(1)
